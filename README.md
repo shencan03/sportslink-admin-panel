@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SportsLink Yönetim Paneli
 
-## Getting Started
+SportsLink mobil uygulaması için geliştirilmiş yönetim panelidir. Kullanıcıları, etkinlikleri ve diğer platform özelliklerini yönetmek için kapsamlı bir arayüz sunar.
 
-First, run the development server:
+## Gereksinimler
+
+- Node.js 18.0.0 veya üzeri
+- npm veya yarn paket yöneticisi
+
+## Başlangıç
+
+1. Projeyi klonlayın:
+
+```bash
+git clone https://github.com/shencan03/sportslink-admin-panel.git
+cd sportslink-admin-panel
+```
+
+2. Bağımlılıkları yükleyin:
+
+```bash
+npm install
+# veya
+yarn install
+```
+
+3. Geliştirme sunucusunu başlatın:
 
 ```bash
 npm run dev
-# or
+# veya
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açarak uygulamayı görüntüleyin.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Özellikler
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 📊 Temel metrikleri gösteren gösterge paneli
+- 👥 Kullanıcı yönetimi
+- 🎯 Etkinlik yönetimi
+- 📰 Haber yönetimi
+- 📈 Analitik ve raporlama
+- 🔒 Rol tabanlı erişim kontrolü
 
-## Learn More
+## Teknoloji Altyapısı
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework:** Next.js 15.3.0
+- **UI Bileşenleri:** shadcn/ui
+- **Stil:** Tailwind CSS
+- **Form Yönetimi:** React Hook Form + Zod
+- **Grafikler:** Recharts
+- **İkonlar:** Lucide React + React Icons
+- **Tarih İşlemleri:** date-fns
+- **Tema:** next-themes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Proje Yapısı
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/              # Next.js sayfa yönlendirmeleri
+├── components/       # Yeniden kullanılabilir bileşenler
+├── lib/             # Yardımcı fonksiyonlar ve sabitler
+└── styles/          # Global stiller
+```
 
-## Deploy on Vercel
+## Kullanılabilir Komutlar
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `npm run dev` - Geliştirme sunucusunu başlat
+- `npm run build` - Prodüksiyon için derleme yap
+- `npm run start` - Prodüksiyon sunucusunu başlat
+- `npm run lint` - Kod kalitesi kontrolü yap
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Katkıda Bulunma
+
+1. Projeyi forklayın
+2. Özellik dalınızı oluşturun (`git checkout -b ozellik/harika-ozellik`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Harika özellik eklendi'`)
+4. Dalınıza push yapın (`git push origin ozellik/harika-ozellik`)
+5. Pull Request açın
+
+## Lisans
+
+Bu proje özel ve gizlidir.
