@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,19 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Badge } from "@/components/ui/badge";
+import {
+  FileEdit,
+  Image as ImageIcon,
+  Link2,
+  Newspaper,
+  User2,
+  CheckCircle2,
+  FileText,
+  Globe,
+  Dumbbell,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const newsSchema = z.object({
   title: z.string().min(1, "Başlık zorunludur"),
@@ -151,13 +165,17 @@ export function NewsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
+            <Newspaper className="h-5 w-5 text-primary" />
             {news ? "Haberi Düzenle" : "Yeni Haber Ekle"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="title">Başlık</Label>
+            <Label htmlFor="title" className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              Başlık
+            </Label>
             <Input
               id="title"
               value={formData.title}
@@ -165,12 +183,16 @@ export function NewsModal({
                 setFormData((prev) => ({ ...prev, title: e.target.value }))
               }
               placeholder="Haber başlığı"
+              className="border-muted"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="summary">Özet</Label>
+            <Label htmlFor="summary" className="flex items-center gap-2">
+              <FileEdit className="h-4 w-4 text-muted-foreground" />
+              Özet
+            </Label>
             <Input
               id="summary"
               value={formData.summary || ""}
@@ -178,11 +200,15 @@ export function NewsModal({
                 setFormData((prev) => ({ ...prev, summary: e.target.value }))
               }
               placeholder="Kısa özet (opsiyonel)"
+              className="border-muted"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">İçerik</Label>
+            <Label htmlFor="content" className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              İçerik
+            </Label>
             <Textarea
               id="content"
               value={formData.content}
@@ -191,43 +217,77 @@ export function NewsModal({
               }
               placeholder="Haber içeriği"
               required
-              className="min-h-[150px]"
+              className="min-h-[150px] border-muted"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="type">Haber Tipi</Label>
+              <Label htmlFor="type" className="flex items-center gap-2">
+                {formData.type === "sportlink" ? (
+                  <Dumbbell className="h-4 w-4 text-[#22c55e]" />
+                ) : (
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                )}
+                Haber Tipi
+              </Label>
               <Select
                 value={formData.type}
                 onValueChange={(value: "genel" | "sportlink") =>
                   setFormData((prev) => ({ ...prev, type: value }))
                 }
               >
-                <SelectTrigger id="type">
+                <SelectTrigger id="type" className="border-muted">
                   <SelectValue placeholder="Haber tipi seçin" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="genel">Normal Haber</SelectItem>
-                  <SelectItem value="sportlink">SportLink</SelectItem>
+                  <SelectItem value="genel">
+                    <span className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      Genel
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="sportlink">
+                    <span className="flex items-center gap-2">
+                      <Dumbbell className="h-4 w-4 text-[#22c55e]" />
+                      SportLink
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Durum</Label>
+              <Label htmlFor="status" className="flex items-center gap-2">
+                {formData.status === "published" ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                ) : (
+                  <FileEdit className="h-4 w-4 text-amber-500" />
+                )}
+                Durum
+              </Label>
               <Select
                 value={formData.status}
                 onValueChange={(value: "published" | "draft") =>
                   setFormData((prev) => ({ ...prev, status: value }))
                 }
               >
-                <SelectTrigger id="status">
+                <SelectTrigger id="status" className="border-muted">
                   <SelectValue placeholder="Durum seçin" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="published">Yayında</SelectItem>
-                  <SelectItem value="draft">Taslak</SelectItem>
+                  <SelectItem value="published">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      Yayında
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="draft">
+                    <span className="flex items-center gap-2">
+                      <FileEdit className="h-4 w-4 text-amber-500" />
+                      Taslak
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -235,7 +295,10 @@ export function NewsModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="image">Görsel URL</Label>
+              <Label htmlFor="image" className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                Görsel URL
+              </Label>
               <Input
                 id="image"
                 value={formData.image?.url || ""}
@@ -251,27 +314,71 @@ export function NewsModal({
                       : undefined,
                   }))
                 }
-                placeholder="Görsel URL (opsiyonel)"
+                placeholder="Görsel bağlantısı (opsiyonel)"
+                className="border-muted"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="author" className="flex items-center gap-2">
+                <User2 className="h-4 w-4 text-muted-foreground" />
+                Yazar
+              </Label>
+              <Input
+                id="author"
+                value={formData.metadata?.author || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    metadata: { ...prev.metadata, author: e.target.value },
+                  }))
+                }
+                placeholder="Yazar adı (opsiyonel)"
+                className="border-muted"
               />
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="hover:border-[#ef4444] hover:text-[#ef4444]"
-            >
-              İptal
-            </Button>
-            <Button
-              type="submit"
-              className="bg-[#22c55e] text-white hover:bg-[#22c55e]/90"
-            >
-              {news ? "Güncelle" : "Oluştur"}
-            </Button>
-          </div>
+          <DialogFooter className="flex items-center justify-between gap-4 sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={
+                  formData.type === "sportlink" ? "default" : "secondary"
+                }
+                className={cn(
+                  formData.type === "sportlink" &&
+                    "bg-[#22c55e] hover:bg-[#22c55e]/90"
+                )}
+              >
+                {formData.type === "sportlink" ? "SportLink" : "Genel"}
+              </Badge>
+              <Badge
+                variant={
+                  formData.status === "published" ? "outline" : "secondary"
+                }
+                className={cn(
+                  formData.status === "published"
+                    ? "border-green-500 text-green-500"
+                    : "border-amber-500 text-amber-500"
+                )}
+              >
+                {formData.status === "published" ? "Yayında" : "Taslak"}
+              </Badge>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="border-muted"
+              >
+                İptal
+              </Button>
+              <Button type="submit" className="bg-primary hover:bg-primary/90">
+                {news ? "Güncelle" : "Oluştur"}
+              </Button>
+            </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

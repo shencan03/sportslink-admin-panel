@@ -103,16 +103,18 @@ export function UserDetailsModal({
             <div className="space-y-4 py-4 pr-4">
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <button
-                    onClick={handleViewInUsersList}
-                    className="font-semibold text-[#22c55e] hover:text-[#22c55e]/90 focus:outline-none inline-flex items-center gap-1"
-                  >
-                    {user.name}
-                    <span className="text-xs text-muted-foreground">
-                      (Profili Görüntüle)
+                  <User className="h-4 w-4 text-primary" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-semibold text-primary">
+                      {user.name}
                     </span>
-                  </button>
+                    <button
+                      onClick={handleViewInUsersList}
+                      className="text-xs px-2 py-1 rounded-md border border-primary/20 text-primary/80 hover:bg-primary/10 transition-all cursor-pointer"
+                    >
+                      Profili Görüntüle
+                    </button>
+                  </div>
                   <div className="flex gap-2 ml-auto">
                     <Badge
                       variant={user.role === "admin" ? "default" : "secondary"}
@@ -226,7 +228,7 @@ export function UserDetailsModal({
                         {upcomingEvents[currentEventIndex].maxParticipants}{" "}
                         Katılımcı
                       </div>
-                      <div className="text-xs text-muted-foreground mt-2 text-center">
+                      <div className="text-xs text-muted-foreground mt-2 text-center cursor-pointer">
                         (Etkinliğe Git)
                       </div>
                     </div>
@@ -235,7 +237,7 @@ export function UserDetailsModal({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:text-[#22c55e]"
+                          className="h-8 w-8 p-0 hover:text-[#22c55e] cursor-pointer"
                           onClick={handlePrevEvent}
                         >
                           <ChevronLeft className="h-4 w-4" />
@@ -246,7 +248,7 @@ export function UserDetailsModal({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 hover:text-[#22c55e]"
+                          className="h-8 w-8 p-0 hover:text-[#22c55e] cursor-pointer"
                           onClick={handleNextEvent}
                         >
                           <ChevronRight className="h-4 w-4" />

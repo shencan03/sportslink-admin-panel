@@ -20,6 +20,8 @@ import {
 } from "@/components/modals/UserDetailsModal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type SportType, SportBadge } from "@/lib/sport-icons";
+import { UserCardSkeleton } from "@/components/skeletons/UserCardSkeleton";
+import { UserDetailsModalSkeleton } from "@/components/skeletons/UserDetailsModalSkeleton";
 
 // Dummy events data - this would come from your API in a real app
 const dummyEvents: Event[] = [
@@ -137,8 +139,9 @@ const dummyUsers: UserProfile[] = [
 ];
 
 export default function UsersPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "admin">("all");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
@@ -149,6 +152,7 @@ export default function UsersPage() {
   const userRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [isModalLoading, setIsModalLoading] = useState(false);
 
   useEffect(() => {
     const highlightId = searchParams.get("highlight");
@@ -173,6 +177,25 @@ export default function UsersPage() {
     }
   }, [searchParams]);
 
+  // Simulate loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Simulate modal loading when a user is selected
+  useEffect(() => {
+    if (selectedUser) {
+      setIsModalLoading(true);
+      const timer = setTimeout(() => {
+        setIsModalLoading(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedUser]);
+
   const filteredUsers = dummyUsers.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -196,154 +219,195 @@ export default function UsersPage() {
   };
 
   return (
-    <>
-      <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
-        <div className="flex flex-col items-center space-y-4">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center">
-            Kullanıcı Yönetimi
-          </h2>
+    <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
+      <div className="flex flex-col items-center space-y-4">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Kullanıcı Yönetimi
+        </h2>
 
-          <div className="w-full max-w-3xl">
-            <Input
-              placeholder="Kullanıcı ara..."
-              className="w-full"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+        <div className="w-full max-w-3xl space-y-4">
+          <Input
+            placeholder="Kullanıcı ara..."
+            className="w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={isLoading}
+          />
+          <div className="flex gap-2">
+            <Select
+              value={roleFilter}
+              onValueChange={(value) =>
+                setRoleFilter(value as "all" | "user" | "admin")
+              }
+              disabled={isLoading}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tümü</SelectItem>
+                <SelectItem value="admin">Yönetici</SelectItem>
+                <SelectItem value="user">Kullanıcı</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) =>
+                setStatusFilter(value as "all" | "active" | "inactive")
+              }
+              disabled={isLoading}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Durum" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tümü</SelectItem>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="inactive">Pasif</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
+      </div>
 
-        <div className="mx-auto max-w-3xl space-y-4">
-          {filteredUsers.length === 0 ? (
-            <Card>
+      <div className="mx-auto max-w-3xl space-y-4">
+        {isLoading ? (
+          <>
+            <UserCardSkeleton />
+            <UserCardSkeleton />
+            <UserCardSkeleton />
+          </>
+        ) : filteredUsers.length === 0 ? (
+          <div className="text-center text-sm text-muted-foreground">
+            Kullanıcı bulunamadı.
+          </div>
+        ) : (
+          filteredUsers.map((user) => (
+            <Card
+              key={user.id}
+              ref={(el) => {
+                userRefs.current[user.id] = el;
+              }}
+              className={`hover:bg-accent/50 transition-colors ${
+                highlightedUserId === user.id ? "bg-accent animate-pulse" : ""
+              }`}
+            >
               <CardContent className="p-6">
-                <div className="text-center text-sm text-muted-foreground">
-                  Kullanıcı bulunamadı.
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredUsers.map((user) => (
-              <Card
-                key={user.id}
-                ref={(el) => {
-                  userRefs.current[user.id] = el;
-                }}
-                className={`hover:bg-accent/50 transition-colors ${
-                  highlightedUserId === user.id ? "bg-accent animate-pulse" : ""
-                }`}
-              >
-                <CardContent className="p-6">
-                  <div className="flex flex-col space-y-6">
-                    {/* Header Section */}
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <User className="h-5 w-5 text-primary" />
-                          <button
-                            onClick={() => setSelectedUser(user)}
-                            className="text-xl font-semibold hover:underline focus:outline-none"
-                          >
-                            {user.name}
-                          </button>
+                <div className="flex flex-col space-y-6">
+                  {/* Header Section */}
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <User className="h-5 w-5 text-primary" />
+                        <button
+                          onClick={() => setSelectedUser(user)}
+                          className="text-xl font-semibold hover:underline focus:outline-none cursor-pointer"
+                        >
+                          {user.name}
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-4 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="h-4 w-4" />
+                          <span className="text-sm">{user.email}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-muted-foreground">
-                          <div className="flex items-center gap-1.5">
-                            <Mail className="h-4 w-4" />
-                            <span className="text-sm">{user.email}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Phone className="h-4 w-4" />
-                            <span className="text-sm">{user.phone}</span>
-                          </div>
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="h-4 w-4" />
+                          <span className="text-sm">{user.phone}</span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Badge
-                          variant={
-                            user.role === "admin" ? "default" : "secondary"
-                          }
-                        >
-                          {user.role === "admin" ? "Yönetici" : "Kullanıcı"}
-                        </Badge>
-                        <Badge
-                          variant={
-                            user.status === "active" ? "outline" : "destructive"
-                          }
-                        >
-                          {user.status === "active" ? "Aktif" : "Pasif"}
-                        </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge
+                        variant={
+                          user.role === "admin" ? "default" : "secondary"
+                        }
+                      >
+                        {user.role === "admin" ? "Yönetici" : "Kullanıcı"}
+                      </Badge>
+                      <Badge
+                        variant={
+                          user.status === "active" ? "outline" : "destructive"
+                        }
+                      >
+                        {user.status === "active" ? "Aktif" : "Pasif"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Details Section */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span className="text-sm">{user.location}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span className="text-sm">
+                            Katılım:{" "}
+                            {new Date(user.joinDate).toLocaleDateString(
+                              "tr-TR"
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          İlgi Alanları
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {user.interests.map((interest) => (
+                            <SportBadge
+                              key={interest}
+                              sport={interest as SportType}
+                              variant="outline"
+                              className="bg-background/50"
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Details Section */}
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span className="text-sm">{user.location}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
-                            <span className="text-sm">
-                              Katılım:{" "}
-                              {new Date(user.joinDate).toLocaleDateString(
-                                "tr-TR"
-                              )}
-                            </span>
-                          </div>
+                    <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg h-fit">
+                      <div>
+                        <div className="text-2xl font-bold text-primary">
+                          {user.organizedEvents}
                         </div>
-
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-muted-foreground">
-                            İlgi Alanları
-                          </h4>
-                          <div className="flex flex-wrap gap-1.5">
-                            {user.interests.map((interest) => (
-                              <SportBadge
-                                key={interest}
-                                sport={interest as SportType}
-                                variant="outline"
-                                className="bg-background/50"
-                              />
-                            ))}
-                          </div>
+                        <div className="text-sm text-muted-foreground">
+                          Düzenlenen
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg h-fit">
-                        <div>
-                          <div className="text-2xl font-bold text-primary">
-                            {user.organizedEvents}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Düzenlenen
-                          </div>
+                      <div>
+                        <div className="text-2xl font-bold text-primary">
+                          {user.participatedEvents}
                         </div>
-                        <div>
-                          <div className="text-2xl font-bold text-primary">
-                            {user.participatedEvents}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Katılınan
-                          </div>
+                        <div className="text-sm text-muted-foreground">
+                          Katılınan
                         </div>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
-      <UserDetailsModal
-        user={selectedUser}
-        onClose={() => setSelectedUser(null)}
-        userEvents={selectedUser ? getUserEvents(selectedUser.id) : []}
-      />
-    </>
+      {selectedUser && isModalLoading ? (
+        <UserDetailsModalSkeleton />
+      ) : (
+        selectedUser && (
+          <UserDetailsModal
+            user={selectedUser}
+            onClose={() => setSelectedUser(null)}
+            userEvents={selectedUser ? getUserEvents(selectedUser.id) : []}
+          />
+        )
+      )}
+    </div>
   );
 }
