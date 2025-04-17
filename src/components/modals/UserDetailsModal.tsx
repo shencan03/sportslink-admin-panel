@@ -1,0 +1,265 @@
+import {
+  Calendar,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+  Users,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { SportBadge, type SportType } from "@/lib/sport-icons";
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  joinDate: string;
+  role: "admin" | "user";
+  status: "active" | "inactive";
+  organizedEvents: number;
+  participatedEvents: number;
+  interests: SportType[];
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  location: string;
+  dateTime: string;
+  sportType: string;
+  currentParticipants: number;
+  maxParticipants: number;
+  status: "upcoming" | "past";
+  organizerId: string;
+}
+
+interface UserDetailsModalProps {
+  user: UserProfile | null;
+  onClose: () => void;
+  userEvents?: Event[];
+}
+
+export function UserDetailsModal({
+  user,
+  onClose,
+  userEvents = [],
+}: UserDetailsModalProps) {
+  const router = useRouter();
+  const [currentEventIndex, setCurrentEventIndex] = useState(0);
+  const upcomingEvents = userEvents.filter(
+    (event) => event.status === "upcoming"
+  );
+
+  const handleViewInUsersList = () => {
+    if (user) {
+      router.push(`/dashboard/users?highlight=${user.id}`);
+      onClose();
+    }
+  };
+
+  const handleViewEvent = () => {
+    if (upcomingEvents[currentEventIndex]) {
+      router.push(
+        `/dashboard/events?highlight=${upcomingEvents[currentEventIndex].id}`
+      );
+      onClose();
+    }
+  };
+
+  const handlePrevEvent = () => {
+    setCurrentEventIndex((prev) =>
+      prev > 0 ? prev - 1 : upcomingEvents.length - 1
+    );
+  };
+
+  const handleNextEvent = () => {
+    setCurrentEventIndex((prev) =>
+      prev < upcomingEvents.length - 1 ? prev + 1 : 0
+    );
+  };
+
+  return (
+    <Dialog open={user !== null} onOpenChange={onClose}>
+      {user && (
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Kullanıcı Detayları</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[80vh]">
+            <div className="space-y-4 py-4 pr-4">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <button
+                    onClick={handleViewInUsersList}
+                    className="font-semibold text-[#22c55e] hover:text-[#22c55e]/90 focus:outline-none inline-flex items-center gap-1"
+                  >
+                    {user.name}
+                    <span className="text-xs text-muted-foreground">
+                      (Profili Görüntüle)
+                    </span>
+                  </button>
+                  <div className="flex gap-2 ml-auto">
+                    <Badge
+                      variant={user.role === "admin" ? "default" : "secondary"}
+                    >
+                      {user.role === "admin" ? "Yönetici" : "Kullanıcı"}
+                    </Badge>
+                    <Badge
+                      variant={user.status === "active" ? "success" : "warning"}
+                    >
+                      {user.status === "active" ? "Aktif" : "Pasif"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <span>{user.email}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <span>{user.phone}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span>{user.location}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    Katılım:{" "}
+                    {new Date(user.joinDate).toLocaleDateString("tr-TR")}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-medium">İlgi Alanları</h4>
+                <div className="flex flex-wrap gap-2">
+                  {user.interests.map((interest, index) => (
+                    <SportBadge
+                      key={index}
+                      sport={interest}
+                      variant="outline"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-medium">Etkinlik İstatistikleri</h4>
+                <div className="grid grid-cols-2 gap-4 bg-black/5 dark:bg-white/5 p-4 rounded-lg">
+                  <div>
+                    <div className="text-2xl font-bold text-[#22c55e]">
+                      {user.organizedEvents}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Düzenlenen
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-[#22c55e]">
+                      {user.participatedEvents}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Katılınan
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {upcomingEvents.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Yaklaşan Etkinlik</h4>
+                  </div>
+                  <div className="relative">
+                    <div
+                      key={upcomingEvents[currentEventIndex].id}
+                      className="rounded-lg border p-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      onClick={handleViewEvent}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="font-medium text-[#22c55e] hover:text-[#22c55e]/90">
+                            {upcomingEvents[currentEventIndex].title}
+                          </h5>
+                          <div className="flex items-center text-muted-foreground text-sm mt-1">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {new Date(
+                              upcomingEvents[currentEventIndex].dateTime
+                            ).toLocaleString("tr-TR", {
+                              dateStyle: "long",
+                              timeStyle: "short",
+                            })}
+                          </div>
+                          <div className="flex items-center text-muted-foreground text-sm mt-1">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {upcomingEvents[currentEventIndex].location}
+                          </div>
+                        </div>
+                        <SportBadge
+                          sport={
+                            upcomingEvents[currentEventIndex]
+                              .sportType as SportType
+                          }
+                          variant="outline"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground text-sm mt-2">
+                        <Users className="h-3 w-3" />
+                        {upcomingEvents[currentEventIndex].currentParticipants}/
+                        {upcomingEvents[currentEventIndex].maxParticipants}{" "}
+                        Katılımcı
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2 text-center">
+                        (Etkinliğe Git)
+                      </div>
+                    </div>
+                    {upcomingEvents.length > 1 && (
+                      <div className="flex justify-between items-center mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:text-[#22c55e]"
+                          onClick={handlePrevEvent}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          {currentEventIndex + 1} / {upcomingEvents.length}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:text-[#22c55e]"
+                          onClick={handleNextEvent}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      )}
+    </Dialog>
+  );
+}

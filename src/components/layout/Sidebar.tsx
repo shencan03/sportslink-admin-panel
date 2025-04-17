@@ -56,28 +56,28 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col p-4 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800">
+    <div className="flex h-full flex-col p-3 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800">
       <div className="flex-1 space-y-2">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Admin Panel
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            SportLink
           </h1>
           <ThemeToggle />
         </div>
-        <nav className="space-y-1">
+        <nav className="space-y-0.5">
           {routes.map((route) => (
             <Link
               key={route.href}
               href={route.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+                "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium transition-all",
                 "hover:bg-gray-100 dark:hover:bg-gray-800",
                 pathname === route.href
                   ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
               )}
             >
-              <route.icon className={cn("h-5 w-5", route.color)} />
+              <route.icon className={cn("h-4 w-4", route.color)} />
               {route.label}
             </Link>
           ))}

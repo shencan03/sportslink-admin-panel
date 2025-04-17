@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const newsSchema = z.object({
+  title: z.string().min(1, "Başlık zorunludur"),
+  content: z.string().min(1, "İçerik zorunludur"),
+  summary: z.string().optional(),
+  status: z.enum(["published", "draft"]),
+  type: z.enum(["genel", "sportlink"]),
+  image: z
+    .object({
+      url: z.string(),
+      alt: z.string(),
+      aspectRatio: z.enum(["video", "square", "portrait"]),
+    })
+    .optional(),
+  metadata: z
+    .object({
+      author: z.string().optional(),
+      lastModified: z.string().optional(),
+      viewCount: z.number().optional(),
+    })
+    .optional(),
+});
 
 interface NewsImage {
   url: string;
@@ -29,7 +54,6 @@ interface NewsMetadata {
   author?: string;
   lastModified?: string;
   viewCount?: number;
-  priority: "high" | "medium" | "low";
 }
 
 interface News {
@@ -39,7 +63,7 @@ interface News {
   summary?: string;
   date: string;
   status: "published" | "draft";
-  type: "regular" | "sportlink";
+  type: "genel" | "sportlink";
   image?: NewsImage;
   metadata: NewsMetadata;
 }
@@ -49,7 +73,7 @@ interface NewsInput {
   content: string;
   summary?: string;
   status: "published" | "draft";
-  type: "regular" | "sportlink";
+  type: "genel" | "sportlink";
   image?: NewsImage;
   metadata?: Partial<NewsMetadata>;
 }
@@ -67,18 +91,56 @@ export function NewsModal({
   news,
   onSave,
 }: NewsModalProps) {
+  const form = useForm<NewsInput>({
+    resolver: zodResolver(newsSchema),
+    defaultValues: {
+      title: "",
+      content: "",
+      summary: "",
+      status: "draft",
+      type: "genel",
+    },
+  });
+
   const [formData, setFormData] = useState<NewsInput>(() => ({
     title: news?.title || "",
     content: news?.content || "",
     summary: news?.summary || "",
     status: news?.status || "draft",
-    type: news?.type || "regular",
+    type: news?.type || "genel",
     image: news?.image,
     metadata: {
-      author: news?.metadata.author,
-      priority: news?.metadata.priority || "medium",
+      author: news?.metadata?.author,
     },
   }));
+
+  useEffect(() => {
+    if (news) {
+      setFormData({
+        title: news.title,
+        content: news.content,
+        summary: news.summary || "",
+        status: news.status,
+        type: news.type,
+        image: news.image,
+        metadata: {
+          author: news.metadata.author,
+        },
+      });
+    } else {
+      setFormData({
+        title: "",
+        content: "",
+        summary: "",
+        status: "draft",
+        type: "genel",
+        image: undefined,
+        metadata: {
+          author: undefined,
+        },
+      });
+    }
+  }, [news]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +200,7 @@ export function NewsModal({
               <Label htmlFor="type">Haber Tipi</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value: "regular" | "sportlink") =>
+                onValueChange={(value: "genel" | "sportlink") =>
                   setFormData((prev) => ({ ...prev, type: value }))
                 }
               >
@@ -146,7 +208,7 @@ export function NewsModal({
                   <SelectValue placeholder="Haber tipi seçin" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="regular">Normal Haber</SelectItem>
+                  <SelectItem value="genel">Normal Haber</SelectItem>
                   <SelectItem value="sportlink">SportLink</SelectItem>
                 </SelectContent>
               </Select>
@@ -192,28 +254,6 @@ export function NewsModal({
                 placeholder="Görsel URL (opsiyonel)"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="priority">Öncelik</Label>
-              <Select
-                value={formData.metadata?.priority || "medium"}
-                onValueChange={(value: "high" | "medium" | "low") =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    metadata: { ...prev.metadata, priority: value },
-                  }))
-                }
-              >
-                <SelectTrigger id="priority">
-                  <SelectValue placeholder="Öncelik seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">Yüksek</SelectItem>
-                  <SelectItem value="medium">Orta</SelectItem>
-                  <SelectItem value="low">Düşük</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
@@ -221,10 +261,16 @@ export function NewsModal({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="hover:border-[#ef4444] hover:text-[#ef4444]"
             >
               İptal
             </Button>
-            <Button type="submit">{news ? "Güncelle" : "Oluştur"}</Button>
+            <Button
+              type="submit"
+              className="bg-[#22c55e] text-white hover:bg-[#22c55e]/90"
+            >
+              {news ? "Güncelle" : "Oluştur"}
+            </Button>
           </div>
         </form>
       </DialogContent>

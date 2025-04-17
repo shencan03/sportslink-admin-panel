@@ -1,29 +1,22 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Edit,
   Trash2,
-  ChevronDown,
   Plus,
   Smartphone,
-  Filter,
-  AlertCircle,
-  CheckCircle2,
   ChevronRight,
+  CheckCircle2,
+  Calendar,
+  User,
 } from "lucide-react";
 import { NewsModal } from "@/components/modals/NewsModal";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import {
   Select,
   SelectContent,
@@ -31,18 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
@@ -56,7 +44,6 @@ interface NewsMetadata {
   author?: string;
   lastModified?: string;
   viewCount?: number;
-  priority: "high" | "medium" | "low";
 }
 
 interface News {
@@ -66,7 +53,7 @@ interface News {
   summary?: string;
   date: string;
   status: "published" | "draft";
-  type: "regular" | "sportlink";
+  type: "genel" | "sportlink";
   image?: NewsImage;
   metadata: NewsMetadata;
 }
@@ -76,49 +63,33 @@ interface NewsInput {
   content: string;
   summary?: string;
   status: "published" | "draft";
-  type: "regular" | "sportlink";
+  type: "genel" | "sportlink";
   image?: NewsImage;
   metadata?: Partial<NewsMetadata>;
 }
 
 export default function NewsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "regular" | "sportlink">(
-    "all"
-  );
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "published" | "draft"
-  >("all");
-  const [editingNews, setEditingNews] = useState<News | null>(null);
-  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<News | null>(null);
   const [isContentModalOpen, setIsContentModalOpen] = useState(false);
-
-  const scrollElementToCenter = useCallback((element: HTMLElement) => {
-    const viewportHeight = window.innerHeight;
-    const elementRect = element.getBoundingClientRect();
-    const absoluteElementTop = elementRect.top + window.pageYOffset;
-    const elementHeight = elementRect.height;
-    const centerPosition =
-      absoluteElementTop - (viewportHeight - elementHeight) / 2;
-
-    window.scrollTo({
-      top: Math.max(0, centerPosition),
-      behavior: "smooth",
-    });
-  }, []);
-
-  const handleAccordionChange = useCallback(
-    (value: string) => {
-      if (value) {
-        const element = document.getElementById(value);
-        if (element) {
-          scrollElementToCenter(element);
-        }
-      }
-    },
-    [scrollElementToCenter]
-  );
+  const [editingNews, setEditingNews] = useState<News | null>(null);
+  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    news: News | null;
+  }>({
+    open: false,
+    news: null,
+  });
+  const [confirmStatus, setConfirmStatus] = useState<{
+    open: boolean;
+    news: News | null;
+    newStatus: "published" | "draft" | null;
+  }>({
+    open: false,
+    news: null,
+    newStatus: null,
+  });
 
   const [news, setNews] = useState<News[]>([
     {
@@ -130,7 +101,7 @@ export default function NewsPage() {
         "Modern ekipmanlar ve geniş antrenman alanlarıyla yeni spor salonumuz açılıyor.",
       date: "2024-03-10",
       status: "published",
-      type: "regular",
+      type: "genel",
       image: {
         url: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
         alt: "Yeni Spor Salonu",
@@ -140,7 +111,6 @@ export default function NewsPage() {
         author: "Admin",
         lastModified: "2024-03-10",
         viewCount: 156,
-        priority: "high",
       },
     },
     {
@@ -161,7 +131,6 @@ export default function NewsPage() {
         author: "Spor Koordinatörü",
         lastModified: "2024-03-15",
         viewCount: 89,
-        priority: "high",
       },
     },
     {
@@ -172,12 +141,11 @@ export default function NewsPage() {
       summary: "İstanbul Gençler Yüzme Şampiyonası'nda 5 madalya kazandık.",
       date: "2024-03-20",
       status: "published",
-      type: "regular",
+      type: "genel",
       metadata: {
         author: "Yüzme Antrenörü",
         lastModified: "2024-03-20",
         viewCount: 245,
-        priority: "medium",
       },
     },
     {
@@ -198,7 +166,6 @@ export default function NewsPage() {
         author: "Fitness Koordinatörü",
         lastModified: "2024-03-22",
         viewCount: 178,
-        priority: "high",
       },
     },
     {
@@ -209,12 +176,11 @@ export default function NewsPage() {
       summary: "Nisan ayı grup dersleri programı yayınlandı.",
       date: "2024-03-25",
       status: "published",
-      type: "regular",
+      type: "genel",
       metadata: {
         author: "Grup Dersleri Koordinatörü",
         lastModified: "2024-03-25",
         viewCount: 134,
-        priority: "medium",
       },
     },
     {
@@ -235,7 +201,6 @@ export default function NewsPage() {
         author: "Spor Diyetisyeni",
         lastModified: "2024-03-27",
         viewCount: 67,
-        priority: "medium",
       },
     },
     {
@@ -246,7 +211,7 @@ export default function NewsPage() {
       summary: "Yaz dönemi yüzme kursları kayıtları başladı.",
       date: "2024-03-28",
       status: "published",
-      type: "regular",
+      type: "genel",
       image: {
         url: "https://images.unsplash.com/photo-1560090995-01632a28895b?q=80&w=1200&auto=format&fit=crop",
         alt: "Yüzme Kursları",
@@ -256,7 +221,6 @@ export default function NewsPage() {
         author: "Yüzme Koordinatörü",
         lastModified: "2024-03-28",
         viewCount: 198,
-        priority: "high",
       },
     },
     {
@@ -278,7 +242,6 @@ export default function NewsPage() {
         author: "Turnuva Koordinatörü",
         lastModified: "2024-03-30",
         viewCount: 342,
-        priority: "high",
       },
     },
     {
@@ -289,12 +252,11 @@ export default function NewsPage() {
       summary: "Ramazan ayına özel spor programları ve esnek saatler.",
       date: "2024-04-01",
       status: "published",
-      type: "regular",
+      type: "genel",
       metadata: {
         author: "Tesis Müdürü",
         lastModified: "2024-04-01",
         viewCount: 167,
-        priority: "medium",
       },
     },
     {
@@ -306,7 +268,7 @@ export default function NewsPage() {
         "Crossfit, Boxing ve Functional Training uzmanları aramıza katıldı.",
       date: "2024-04-02",
       status: "draft",
-      type: "regular",
+      type: "genel",
       image: {
         url: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1200&auto=format&fit=crop",
         alt: "Yeni Antrenörler",
@@ -316,48 +278,60 @@ export default function NewsPage() {
         author: "İnsan Kaynakları",
         lastModified: "2024-04-02",
         viewCount: 89,
-        priority: "high",
       },
     },
   ]);
 
-  const [confirmAction, setConfirmAction] = useState<{
-    type: "delete" | "status" | null;
-    itemId: string | null;
-    newStatus?: "published" | "draft";
-  }>({ type: null, itemId: null });
-
-  const targetNews = confirmAction.itemId
-    ? news.find((item) => item.id === confirmAction.itemId)
-    : null;
-
-  const filteredNews = news.filter((item) => {
-    const matchesSearch =
+  const filteredNews = news.filter(
+    (item) =>
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === "all" || item.type === typeFilter;
-    const matchesStatus =
-      statusFilter === "all" || item.status === statusFilter;
-    return matchesSearch && matchesType && matchesStatus;
-  });
+      item.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const handleEditNews = (id: string, updatedNews: Partial<NewsInput>) => {
-    setNews(
-      news.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              ...updatedNews,
-              metadata: {
-                ...item.metadata,
-                lastModified: new Date().toISOString(),
-                ...(updatedNews.metadata || {}),
-              },
-            }
-          : item
-      )
-    );
-    toast.success("Haber başarıyla güncellendi");
+  const handleEditNews = (data: NewsInput) => {
+    if (editingNews) {
+      // Update existing news
+      setNews(
+        news.map((item) =>
+          item.id === editingNews.id
+            ? {
+                ...item,
+                ...data,
+                metadata: {
+                  ...item.metadata,
+                  lastModified: new Date().toISOString(),
+                  ...(data.metadata || {}),
+                },
+              }
+            : item
+        )
+      );
+      toast.success("Haber başarıyla güncellendi", {
+        description: `"${data.title}" başlıklı haber güncellendi.`,
+        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+        duration: 4000,
+      });
+    } else {
+      // Add new news
+      const newNews: News = {
+        id: String(Date.now()),
+        ...data,
+        date: new Date().toISOString(),
+        metadata: {
+          author: "Admin", // Default author
+          lastModified: new Date().toISOString(),
+          viewCount: 0,
+          ...(data.metadata || {}),
+        },
+      };
+      setNews([...news, newNews]);
+      toast.success("Yeni haber eklendi", {
+        description: `"${data.title}" başlıklı haber oluşturuldu.`,
+        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+        duration: 4000,
+      });
+    }
+    setIsNewsModalOpen(false);
     setEditingNews(null);
   };
 
@@ -373,7 +347,7 @@ export default function NewsPage() {
       description: `"${newsToDelete?.title}" başlıklı haber silindi.`,
       icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
     });
-    setConfirmAction({ type: null, itemId: null });
+    setConfirmDelete({ open: false, news: null });
   };
 
   const handleConfirmedStatusChange = (
@@ -392,12 +366,14 @@ export default function NewsPage() {
       }.`,
       icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
     });
-    setConfirmAction({ type: null, itemId: null });
+    setConfirmStatus({ open: false, news: null, newStatus: null });
   };
 
   const handleNewsClick = (newsItem: News) => {
     setSelectedNews(newsItem);
     setIsContentModalOpen(true);
+    setEditingNews(null);
+    setIsNewsModalOpen(false);
   };
 
   const NewsCard = ({ news }: { news: News }) => (
@@ -454,14 +430,6 @@ export default function NewsPage() {
                   SportLink
                 </Badge>
               )}
-              {news.metadata.priority === "high" && (
-                <Badge
-                  variant="secondary"
-                  className="px-1.5 py-0 text-xs bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800"
-                >
-                  Önemli
-                </Badge>
-              )}
             </div>
           </div>
         </div>
@@ -471,340 +439,280 @@ export default function NewsPage() {
   );
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6 bg-gray-50 dark:bg-gray-900">
+    <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex flex-col items-center space-y-4">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-          Haber & Duyuru Yönetimi
-        </h2>
-
-        <div className="flex w-full max-w-3xl items-center justify-between space-x-4">
-          <div className="flex items-center space-x-2 flex-1">
-            <Input
-              placeholder="Haber ara..."
-              className="flex-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Select
-              value={typeFilter}
-              onValueChange={(value: "all" | "regular" | "sportlink") =>
-                setTypeFilter(value)
-              }
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Haber Tipi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tümü</SelectItem>
-                <SelectItem value="regular">Normal Haberler</SelectItem>
-                <SelectItem value="sportlink">
-                  SportLink Etkinlikleri
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={statusFilter}
-              onValueChange={(value: "all" | "published" | "draft") =>
-                setStatusFilter(value)
-              }
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Durum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tümü</SelectItem>
-                <SelectItem value="published">Yayında</SelectItem>
-                <SelectItem value="draft">Taslak</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex w-full max-w-3xl items-center justify-between">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Haberler
+          </h2>
           <Button
             onClick={() => setIsNewsModalOpen(true)}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="mr-2 h-4 w-4" />
             Haber Ekle
           </Button>
         </div>
+
+        <div className="w-full max-w-3xl">
+          <Input
+            placeholder="Haberlerde ara..."
+            className="w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-3xl space-y-4">
+        {filteredNews.length === 0 ? (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-sm text-muted-foreground">
+                Haber bulunamadı.
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredNews.map((item) => (
+            <Card
+              key={item.id}
+              className={cn(
+                "overflow-hidden hover:bg-accent/50 transition-colors",
+                item.type === "sportlink" && "border-[#22c55e]"
+              )}
+            >
+              <CardContent className="p-0">
+                {item.image && (
+                  <div className="relative h-48 w-full">
+                    <img
+                      src={item.image.url}
+                      alt={item.image.alt}
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                  </div>
+                )}
+                <div className="p-6 space-y-4">
+                  {/* Header Section */}
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedNews(item);
+                            setIsContentModalOpen(true);
+                          }}
+                          className="text-xl font-semibold hover:text-[#22c55e] focus:outline-none"
+                        >
+                          {item.title}
+                        </button>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {item.summary || item.content}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge
+                        variant={
+                          item.type === "sportlink" ? "default" : "secondary"
+                        }
+                        className={cn(
+                          item.type === "sportlink"
+                            ? "bg-[#22c55e] text-white hover:bg-[#22c55e]/90"
+                            : "bg-secondary text-secondary-foreground"
+                        )}
+                      >
+                        {item.type === "sportlink" ? "SportLink" : "Genel"}
+                      </Badge>
+                      <Badge
+                        variant={
+                          item.status === "published"
+                            ? "outline"
+                            : "destructive"
+                        }
+                        className={cn(
+                          item.status === "published"
+                            ? "border-[#22c55e] text-[#22c55e]"
+                            : "bg-[#ef4444] text-white hover:bg-[#ef4444]/90"
+                        )}
+                      >
+                        {item.status === "published" ? "Yayında" : "Taslak"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Details Section */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span className="text-sm">
+                          {new Date(item.date).toLocaleDateString("tr-TR")}
+                        </span>
+                      </div>
+                      {item.metadata.author && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <User className="h-4 w-4" />
+                          <span className="text-sm">
+                            {item.metadata.author}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingNews(item);
+                          setIsNewsModalOpen(true);
+                        }}
+                        className="hover:border-[#22c55e] hover:text-[#22c55e]"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDelete({ open: true, news: item });
+                        }}
+                        className="hover:border-[#ef4444] hover:text-[#ef4444]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "transition-colors",
+                          item.status === "published"
+                            ? "hover:border-[#ef4444] hover:text-[#ef4444]"
+                            : "hover:border-[#22c55e] hover:text-[#22c55e]"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmStatus({
+                            open: true,
+                            news: item,
+                            newStatus:
+                              item.status === "published"
+                                ? "draft"
+                                : "published",
+                          });
+                        }}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Stats Section */}
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground bg-black/5 dark:bg-white/5 p-3 rounded-lg">
+                    <div>
+                      <Smartphone className="h-4 w-4 inline-block mr-1.5" />
+                      {item.metadata.viewCount || 0} görüntülenme
+                    </div>
+                    {item.metadata.lastModified && (
+                      <div>
+                        <Calendar className="h-4 w-4 inline-block mr-1.5" />
+                        Son güncelleme:{" "}
+                        {new Date(
+                          item.metadata.lastModified
+                        ).toLocaleDateString("tr-TR")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       <NewsModal
         open={isNewsModalOpen}
         onOpenChange={(open) => {
-          if (!open) {
-            setIsNewsModalOpen(open);
-            setEditingNews(null);
-          } else {
-            setIsNewsModalOpen(open);
-          }
+          setIsNewsModalOpen(open);
+          if (!open) setEditingNews(null);
         }}
         news={editingNews}
-        onSave={(newsData: NewsInput) => {
-          if (editingNews) {
-            // Update existing news
-            setNews(
-              news.map((item) =>
-                item.id === editingNews.id
-                  ? {
-                      ...item,
-                      ...newsData,
-                      metadata: {
-                        ...item.metadata,
-                        lastModified: new Date().toISOString(),
-                        ...(newsData.metadata || {}),
-                      },
-                    }
-                  : item
-              )
-            );
-            toast.success("Haber başarıyla güncellendi", {
-              description: `"${newsData.title}" başlıklı haber güncellendi.`,
-              icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-              duration: 4000,
-            });
-          } else {
-            // Add new news
-            const newNews: News = {
-              id: String(Date.now()),
-              ...newsData,
-              date: new Date().toISOString(),
-              metadata: {
-                author: "Admin", // Default author
-                lastModified: new Date().toISOString(),
-                viewCount: 0,
-                priority: "medium", // Default priority
-                ...(newsData.metadata || {}),
-              },
-            };
-            setNews([...news, newNews]);
-            toast.success("Yeni haber eklendi", {
-              description: `"${newsData.title}" başlıklı haber oluşturuldu.`,
-              icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-              duration: 4000,
-            });
-          }
-          setIsNewsModalOpen(false);
-          setEditingNews(null);
-        }}
+        onSave={handleEditNews}
       />
 
-      <Card className="mx-auto max-w-3xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardHeader className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-gray-900 dark:text-gray-100">
-              Tüm Haberler
-            </CardTitle>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {filteredNews.length} haber
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-3">
-            {filteredNews.map((item) => (
-              <NewsCard key={item.id} news={item} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       <Dialog open={isContentModalOpen} onOpenChange={setIsContentModalOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          {selectedNews && (
-            <>
-              <DialogHeader>
-                <div className="space-y-1">
-                  <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                    {selectedNews.title}
-                  </DialogTitle>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span>
-                      {new Date(selectedNews.date).toLocaleDateString("tr-TR")}
-                    </span>
-                    {selectedNews.metadata.author && (
-                      <>
-                        <span>•</span>
-                        <span>{selectedNews.metadata.author}</span>
-                      </>
-                    )}
-                    {selectedNews.metadata.viewCount && (
-                      <>
-                        <span>•</span>
-                        <span>
-                          {selectedNews.metadata.viewCount} görüntülenme
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                {selectedNews.image && (
-                  <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                    <img
-                      src={selectedNews.image.url}
-                      alt={selectedNews.image.alt}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
-                <p className="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                  {selectedNews.content}
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs sm:text-sm border-gray-200 dark:border-gray-700"
-                      >
-                        <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                        Mobil Önizleme
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[320px] p-0">
-                      <DialogHeader className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
-                        <DialogTitle className="text-sm sm:text-base">
-                          Mobil Önizleme
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="overflow-hidden">
-                        {selectedNews.image && (
-                          <div className="aspect-[4/3] w-full">
-                            <img
-                              src={selectedNews.image.url}
-                              alt={selectedNews.image.alt}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <div className="p-3 sm:p-4 space-y-2">
-                          <h3 className="font-semibold text-sm sm:text-base">
-                            {selectedNews.title}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
-                            {selectedNews.content}
-                          </p>
-                          <div className="flex justify-between items-center text-xs pt-2 border-t border-gray-200 dark:border-gray-700">
-                            <span className="text-gray-500 dark:text-gray-400">
-                              {new Date(selectedNews.date).toLocaleDateString(
-                                "tr-TR"
-                              )}
-                            </span>
-                            {selectedNews.type === "sportlink" && (
-                              <Badge
-                                variant="secondary"
-                                className="px-1.5 py-0 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-                              >
-                                SportLink
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs sm:text-sm border-gray-200 dark:border-gray-700"
-                    onClick={() => {
-                      setEditingNews(selectedNews);
-                      setIsNewsModalOpen(true);
-                      setIsContentModalOpen(false);
-                    }}
-                  >
-                    <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    Düzenle
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs sm:text-sm border-gray-200 dark:border-gray-700"
-                    onClick={() => {
-                      setConfirmAction({
-                        type: "status",
-                        itemId: selectedNews.id,
-                        newStatus:
-                          selectedNews.status === "published"
-                            ? "draft"
-                            : "published",
-                      });
-                      setIsContentModalOpen(false);
-                    }}
-                  >
-                    {selectedNews.status === "published"
-                      ? "Taslağa Al"
-                      : "Yayınla"}
-                  </Button>
-
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="h-8 text-xs sm:text-sm"
-                    onClick={() => {
-                      setConfirmAction({
-                        type: "delete",
-                        itemId: selectedNews.id,
-                      });
-                      setIsContentModalOpen(false);
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    Sil
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedNews?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedNews?.image && (
+              <img
+                src={selectedNews.image.url}
+                alt={selectedNews.image.alt}
+                className="w-full h-64 object-cover rounded-lg"
+              />
+            )}
+            <p className="whitespace-pre-wrap">{selectedNews?.content}</p>
+          </div>
         </DialogContent>
       </Dialog>
 
       <ConfirmationDialog
-        open={confirmAction.type === "delete"}
+        open={confirmDelete.open}
         onOpenChange={(open) =>
-          !open && setConfirmAction({ type: null, itemId: null })
+          setConfirmDelete({ open, news: open ? confirmDelete.news : null })
         }
         title="Haberi Sil"
-        description={`"${targetNews?.title}" başlıklı haberi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`}
+        description={`"${confirmDelete.news?.title}" başlıklı haberi silmek istediğinizden emin misiniz?`}
         actionLabel="Sil"
         variant="destructive"
-        onConfirm={() =>
-          confirmAction.itemId && handleConfirmedDelete(confirmAction.itemId)
-        }
+        onConfirm={() => {
+          if (confirmDelete.news) {
+            handleConfirmedDelete(confirmDelete.news.id);
+          }
+          setConfirmDelete({ open: false, news: null });
+        }}
       />
 
       <ConfirmationDialog
-        open={confirmAction.type === "status"}
+        open={confirmStatus.open}
         onOpenChange={(open) =>
-          !open && setConfirmAction({ type: null, itemId: null })
+          setConfirmStatus({
+            open,
+            news: open ? confirmStatus.news : null,
+            newStatus: null,
+          })
         }
-        title="Haber Durumunu Güncelle"
+        title={
+          confirmStatus.newStatus === "published"
+            ? "Haberi Yayınla"
+            : "Haberi Taslağa Al"
+        }
         description={
-          confirmAction.newStatus === "published"
-            ? `"${targetNews?.title}" başlıklı haberi yayınlamak istediğinizden emin misiniz?`
-            : `"${targetNews?.title}" başlıklı haberi taslağa almak istediğinizden emin misiniz?`
+          confirmStatus.newStatus === "published"
+            ? `"${confirmStatus.news?.title}" başlıklı haberi yayınlamak istediğinizden emin misiniz?`
+            : `"${confirmStatus.news?.title}" başlıklı haberi taslağa almak istediğinizden emin misiniz?`
         }
         actionLabel={
-          confirmAction.newStatus === "published" ? "Yayınla" : "Taslağa Al"
+          confirmStatus.newStatus === "published" ? "Yayınla" : "Taslağa Al"
         }
         variant={
-          confirmAction.newStatus === "published" ? "default" : "warning"
+          confirmStatus.newStatus === "published" ? "default" : "destructive"
         }
-        onConfirm={() =>
-          confirmAction.itemId &&
-          confirmAction.newStatus &&
-          handleConfirmedStatusChange(
-            confirmAction.itemId,
-            confirmAction.newStatus
-          )
-        }
+        onConfirm={() => {
+          if (confirmStatus.news && confirmStatus.newStatus) {
+            handleConfirmedStatusChange(
+              confirmStatus.news.id,
+              confirmStatus.newStatus
+            );
+          }
+          setConfirmStatus({ open: false, news: null, newStatus: null });
+        }}
       />
     </div>
   );
