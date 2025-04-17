@@ -12,73 +12,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Mail, MapPin, Phone, User } from "lucide-react";
+import {
+  Calendar,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+  ChevronRight,
+} from "lucide-react";
 import {
   UserDetailsModal,
   type UserProfile,
-  Event,
 } from "@/components/modals/UserDetailsModal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type SportType, SportBadge } from "@/lib/sport-icons";
+import { Event } from "@/types/events";
+import { MockEventService } from "@/services/event-service";
 
-// Dummy events data - this would come from your API in a real app
-const dummyEvents: Event[] = [
-  {
-    id: "1",
-    title: "Soccer Match",
-    location: "Sports Complex A",
-    dateTime: "2024-03-20T14:00:00",
-    sportType: "Soccer",
-    currentParticipants: 18,
-    maxParticipants: 22,
-    status: "upcoming",
-    organizerId: "1",
-  },
-  {
-    id: "2",
-    title: "Basketball Tournament",
-    location: "Indoor Court B",
-    dateTime: "2024-03-22T16:00:00",
-    sportType: "Basketball",
-    currentParticipants: 8,
-    maxParticipants: 10,
-    status: "upcoming",
-    organizerId: "2",
-  },
-  {
-    id: "3",
-    title: "Tennis Workshop",
-    location: "Tennis Center",
-    dateTime: "2024-03-15T10:00:00",
-    sportType: "Tennis",
-    currentParticipants: 4,
-    maxParticipants: 6,
-    status: "past",
-    organizerId: "1",
-  },
-  {
-    id: "4",
-    title: "Swimming Competition",
-    location: "Aquatic Center",
-    dateTime: "2024-03-25T09:00:00",
-    sportType: "Swimming",
-    currentParticipants: 15,
-    maxParticipants: 20,
-    status: "upcoming",
-    organizerId: "3",
-  },
-  {
-    id: "5",
-    title: "Volleyball Match",
-    location: "Beach Court",
-    dateTime: "2024-03-18T15:00:00",
-    sportType: "Volleyball",
-    currentParticipants: 10,
-    maxParticipants: 12,
-    status: "past",
-    organizerId: "2",
-  },
-];
+// Initialize the event service
+const eventService = new MockEventService();
 
 // Dummy users data - synchronized with events page users
 const dummyUsers: UserProfile[] = [
@@ -93,7 +45,7 @@ const dummyUsers: UserProfile[] = [
     status: "active",
     organizedEvents: 5,
     participatedEvents: 12,
-    interests: ["Futbol", "Basketbol", "Voleybol"],
+    interests: ["Futbol", "Basketbol", "Voleybol"] as SportType[],
   },
   {
     id: "admin456",
@@ -106,7 +58,7 @@ const dummyUsers: UserProfile[] = [
     status: "active",
     organizedEvents: 25,
     participatedEvents: 8,
-    interests: ["Futbol", "Basketbol", "Tenis", "Yüzme"],
+    interests: ["Futbol", "Basketbol", "Tenis", "Yüzme"] as SportType[],
   },
   {
     id: "user789",
@@ -119,7 +71,7 @@ const dummyUsers: UserProfile[] = [
     status: "active",
     organizedEvents: 3,
     participatedEvents: 15,
-    interests: ["Tenis", "Yüzme", "Voleybol"],
+    interests: ["Tenis", "Yüzme", "Voleybol"] as SportType[],
   },
   {
     id: "user234",
@@ -132,7 +84,7 @@ const dummyUsers: UserProfile[] = [
     status: "active",
     organizedEvents: 8,
     participatedEvents: 20,
-    interests: ["Basketbol", "Futbol"],
+    interests: ["Basketbol", "Futbol"] as SportType[],
   },
 ];
 
@@ -143,6 +95,7 @@ export default function UsersPage() {
     "all" | "active" | "inactive"
   >("all");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [userEvents, setUserEvents] = useState<Event[]>([]);
   const [highlightedUserId, setHighlightedUserId] = useState<string | null>(
     null
   );
@@ -173,6 +126,17 @@ export default function UsersPage() {
     }
   }, [searchParams]);
 
+  // Load events when a user is selected
+  useEffect(() => {
+    const loadEvents = async () => {
+      if (selectedUser) {
+        const events = await eventService.getCurrentEvents();
+        setUserEvents(events);
+      }
+    };
+    loadEvents();
+  }, [selectedUser]);
+
   const filteredUsers = dummyUsers.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -192,7 +156,7 @@ export default function UsersPage() {
   };
 
   const getUserEvents = (userId: string) => {
-    return dummyEvents.filter((event) => event.organizerId === userId);
+    return userEvents.filter((event) => event.organizerId === userId);
   };
 
   return (
@@ -242,9 +206,15 @@ export default function UsersPage() {
                           <User className="h-5 w-5 text-primary" />
                           <button
                             onClick={() => setSelectedUser(user)}
-                            className="text-xl font-semibold hover:underline focus:outline-none"
+                            className="group flex items-center gap-2 focus:outline-none"
                           >
-                            {user.name}
+                            <span className="text-xl font-semibold group-hover:text-primary transition-colors">
+                              {user.name}
+                            </span>
+                            <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
+                              (Profili Görüntüle)
+                            </span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                           </button>
                         </div>
                         <div className="flex items-center gap-4 text-muted-foreground">

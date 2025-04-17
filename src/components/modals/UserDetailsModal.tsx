@@ -7,6 +7,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Clock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,8 +19,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SportBadge, type SportType } from "@/lib/sport-icons";
+import { Event, EventStatus } from "@/types/events";
+import { MockEventService } from "@/services/event-service";
 
 export interface UserProfile {
   id: string;
@@ -35,18 +38,6 @@ export interface UserProfile {
   interests: SportType[];
 }
 
-export interface Event {
-  id: string;
-  title: string;
-  location: string;
-  dateTime: string;
-  sportType: string;
-  currentParticipants: number;
-  maxParticipants: number;
-  status: "upcoming" | "past";
-  organizerId: string;
-}
-
 interface UserDetailsModalProps {
   user: UserProfile | null;
   onClose: () => void;
@@ -60,9 +51,43 @@ export function UserDetailsModal({
 }: UserDetailsModalProps) {
   const router = useRouter();
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
-  const upcomingEvents = userEvents.filter(
-    (event) => event.status === "upcoming"
+  const [eventStatuses, setEventStatuses] = useState<
+    Record<string, EventStatus>
+  >({});
+  const eventService = useMemo(() => new MockEventService(), []);
+
+  // Sort events once when userEvents changes
+  const sortedEvents = useMemo(
+    () =>
+      [...userEvents].sort((a, b) => {
+        if (a.status === "active" && b.status !== "active") return -1;
+        if (a.status !== "active" && b.status === "active") return 1;
+        if (a.status === "upcoming" && b.status === "past") return -1;
+        if (a.status === "past" && b.status === "upcoming") return 1;
+        return 0;
+      }),
+    [userEvents]
   );
+
+  // Update event statuses every second
+  useEffect(() => {
+    if (sortedEvents.length === 0) return;
+
+    const updateStatuses = () => {
+      setEventStatuses((prevStatuses) => {
+        const newStatuses = { ...prevStatuses };
+        sortedEvents.forEach((event) => {
+          newStatuses[event.id] = eventService.getEventStatus(event);
+        });
+        return newStatuses;
+      });
+    };
+
+    updateStatuses(); // Initial update
+    const interval = setInterval(updateStatuses, 1000);
+
+    return () => clearInterval(interval);
+  }, [sortedEvents, eventService]);
 
   const handleViewInUsersList = () => {
     if (user) {
@@ -72,9 +97,9 @@ export function UserDetailsModal({
   };
 
   const handleViewEvent = () => {
-    if (upcomingEvents[currentEventIndex]) {
+    if (sortedEvents[currentEventIndex]) {
       router.push(
-        `/dashboard/events?highlight=${upcomingEvents[currentEventIndex].id}`
+        `/dashboard/events?highlight=${sortedEvents[currentEventIndex].id}`
       );
       onClose();
     }
@@ -82,13 +107,13 @@ export function UserDetailsModal({
 
   const handlePrevEvent = () => {
     setCurrentEventIndex((prev) =>
-      prev > 0 ? prev - 1 : upcomingEvents.length - 1
+      prev > 0 ? prev - 1 : sortedEvents.length - 1
     );
   };
 
   const handleNextEvent = () => {
     setCurrentEventIndex((prev) =>
-      prev < upcomingEvents.length - 1 ? prev + 1 : 0
+      prev < sortedEvents.length - 1 ? prev + 1 : 0
     );
   };
 
@@ -182,26 +207,34 @@ export function UserDetailsModal({
                 </div>
               </div>
 
-              {upcomingEvents.length > 0 && (
+              {sortedEvents.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Yaklaşan Etkinlik</h4>
+                    <h4 className="font-medium">
+                      {eventStatuses[sortedEvents[currentEventIndex]?.id]
+                        ?.isActive
+                        ? "Devam Eden Etkinlik"
+                        : eventStatuses[sortedEvents[currentEventIndex]?.id]
+                            ?.isUpcoming
+                        ? "Yaklaşan Etkinlik"
+                        : "Geçmiş Etkinlik"}
+                    </h4>
                   </div>
                   <div className="relative">
                     <div
-                      key={upcomingEvents[currentEventIndex].id}
+                      key={sortedEvents[currentEventIndex].id}
                       className="rounded-lg border p-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                       onClick={handleViewEvent}
                     >
                       <div className="flex justify-between items-start">
                         <div>
                           <h5 className="font-medium text-[#22c55e] hover:text-[#22c55e]/90">
-                            {upcomingEvents[currentEventIndex].title}
+                            {sortedEvents[currentEventIndex].title}
                           </h5>
                           <div className="flex items-center text-muted-foreground text-sm mt-1">
                             <Calendar className="h-3 w-3 mr-1" />
                             {new Date(
-                              upcomingEvents[currentEventIndex].dateTime
+                              sortedEvents[currentEventIndex].startDateTime
                             ).toLocaleString("tr-TR", {
                               dateStyle: "long",
                               timeStyle: "short",
@@ -209,28 +242,49 @@ export function UserDetailsModal({
                           </div>
                           <div className="flex items-center text-muted-foreground text-sm mt-1">
                             <MapPin className="h-3 w-3 mr-1" />
-                            {upcomingEvents[currentEventIndex].location}
+                            {sortedEvents[currentEventIndex].location}
                           </div>
+                          {eventStatuses[sortedEvents[currentEventIndex]?.id]
+                            ?.isActive && (
+                            <div className="flex items-center text-[#22c55e] text-sm mt-1">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {
+                                eventStatuses[
+                                  sortedEvents[currentEventIndex].id
+                                ].formattedElapsedTime
+                              }{" "}
+                              süredir devam ediyor
+                            </div>
+                          )}
+                          {eventStatuses[sortedEvents[currentEventIndex]?.id]
+                            ?.isUpcoming && (
+                            <div className="flex items-center text-amber-500 text-sm mt-1">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {
+                                eventStatuses[
+                                  sortedEvents[currentEventIndex].id
+                                ].formattedRemainingTime
+                              }{" "}
+                              sonra başlayacak
+                            </div>
+                          )}
                         </div>
                         <SportBadge
-                          sport={
-                            upcomingEvents[currentEventIndex]
-                              .sportType as SportType
-                          }
+                          sport={sortedEvents[currentEventIndex].sportType}
                           variant="outline"
                         />
                       </div>
                       <div className="flex items-center gap-1 text-muted-foreground text-sm mt-2">
                         <Users className="h-3 w-3" />
-                        {upcomingEvents[currentEventIndex].currentParticipants}/
-                        {upcomingEvents[currentEventIndex].maxParticipants}{" "}
+                        {sortedEvents[currentEventIndex].currentParticipants}/
+                        {sortedEvents[currentEventIndex].maxParticipants}{" "}
                         Katılımcı
                       </div>
                       <div className="text-xs text-muted-foreground mt-2 text-center">
                         (Etkinliğe Git)
                       </div>
                     </div>
-                    {upcomingEvents.length > 1 && (
+                    {sortedEvents.length > 1 && (
                       <div className="flex justify-between items-center mt-2">
                         <Button
                           variant="ghost"
@@ -241,7 +295,7 @@ export function UserDetailsModal({
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <span className="text-sm text-muted-foreground">
-                          {currentEventIndex + 1} / {upcomingEvents.length}
+                          {currentEventIndex + 1} / {sortedEvents.length}
                         </span>
                         <Button
                           variant="ghost"
