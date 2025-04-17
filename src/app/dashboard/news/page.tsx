@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Calendar,
   User,
+  FileEdit,
 } from "lucide-react";
 import { NewsModal } from "@/components/modals/NewsModal";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,14 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { NewsCardSkeleton } from "@/components/skeletons/NewsCardSkeleton";
+import { NewsModalSkeleton } from "@/components/skeletons/NewsModalSkeleton";
 
 interface NewsImage {
   url: string;
@@ -69,7 +78,15 @@ interface NewsInput {
 }
 
 export default function NewsPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalLoading, setIsModalLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "news" | "announcement">(
+    "all"
+  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "published" | "draft"
+  >("all");
   const [selectedNews, setSelectedNews] = useState<News | null>(null);
   const [isContentModalOpen, setIsContentModalOpen] = useState(false);
   const [editingNews, setEditingNews] = useState<News | null>(null);
@@ -90,6 +107,25 @@ export default function NewsPage() {
     news: null,
     newStatus: null,
   });
+
+  // Simulate loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Simulate modal loading when news is selected or created
+  useEffect(() => {
+    if (isNewsModalOpen) {
+      setIsModalLoading(true);
+      const timer = setTimeout(() => {
+        setIsModalLoading(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isNewsModalOpen]);
 
   const [news, setNews] = useState<News[]>([
     {
@@ -465,7 +501,13 @@ export default function NewsPage() {
       </div>
 
       <div className="mx-auto max-w-3xl space-y-4">
-        {filteredNews.length === 0 ? (
+        {isLoading ? (
+          <>
+            <NewsCardSkeleton />
+            <NewsCardSkeleton />
+            <NewsCardSkeleton />
+          </>
+        ) : filteredNews.length === 0 ? (
           <Card>
             <CardContent className="p-6">
               <div className="text-center text-sm text-muted-foreground">
@@ -503,7 +545,7 @@ export default function NewsPage() {
                             setSelectedNews(item);
                             setIsContentModalOpen(true);
                           }}
-                          className="text-xl font-semibold hover:text-[#22c55e] focus:outline-none"
+                          className="text-xl font-semibold hover:text-[#22c55e] focus:outline-none cursor-pointer"
                         >
                           {item.title}
                         </button>
@@ -585,29 +627,50 @@ export default function NewsPage() {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "transition-colors",
-                          item.status === "published"
-                            ? "hover:border-[#ef4444] hover:text-[#ef4444]"
-                            : "hover:border-[#22c55e] hover:text-[#22c55e]"
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setConfirmStatus({
-                            open: true,
-                            news: item,
-                            newStatus:
-                              item.status === "published"
-                                ? "draft"
-                                : "published",
-                          });
-                        }}
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={cn(
+                                "transition-colors flex items-center gap-2 min-w-[120px] justify-center",
+                                item.status === "published"
+                                  ? "border-green-500 text-green-500 hover:bg-green-500/10"
+                                  : "border-amber-500 text-amber-500 hover:bg-amber-500/10"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirmStatus({
+                                  open: true,
+                                  news: item,
+                                  newStatus:
+                                    item.status === "published"
+                                      ? "draft"
+                                      : "published",
+                                });
+                              }}
+                            >
+                              {item.status === "published" ? (
+                                <>
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  <span>Yayında</span>
+                                </>
+                              ) : (
+                                <>
+                                  <FileEdit className="h-4 w-4" />
+                                  <span>Taslak</span>
+                                </>
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {item.status === "published"
+                              ? "Haberi taslağa almak için tıklayın"
+                              : "Haberi yayınlamak için tıklayın"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
 

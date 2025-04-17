@@ -22,6 +22,8 @@ import {
   AlertCircle,
   User,
   UserCircle2,
+  Filter,
+  Activity,
 } from "lucide-react";
 import {
   UserDetailsModal,
@@ -29,6 +31,7 @@ import {
 } from "@/components/modals/UserDetailsModal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type SportType, SportBadge, sportIcons } from "@/lib/sport-icons";
+import { EventCardSkeleton } from "@/components/skeletons/EventCardSkeleton";
 import React from "react";
 
 interface Event {
@@ -195,12 +198,13 @@ const dummyEvents: Event[] = [
 ];
 
 export default function EventsPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "user" | "admin">("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "past">(
-    "all"
-  );
-  const [sportFilter, setSportFilter] = useState<SportType | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | SportType>("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "upcoming" | "ongoing" | "past"
+  >("all");
+  const [organizerFilter, setOrganizerFilter] = useState<string>("all");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(
     null
@@ -208,6 +212,15 @@ export default function EventsPage() {
   const eventRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Simulate loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500); // Simulate API call delay
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const highlightId = searchParams.get("highlight");
@@ -266,94 +279,124 @@ export default function EventsPage() {
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.sportType.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType =
-      typeFilter === "all" || event.organizer.type === typeFilter;
+    const matchesType = typeFilter === "all" || event.sportType === typeFilter;
     const matchesStatus =
       statusFilter === "all" || event.status === statusFilter;
-    const matchesSport =
-      sportFilter === "all" || event.sportType === sportFilter;
-    return matchesSearch && matchesType && matchesStatus && matchesSport;
+    const matchesOrganizer =
+      organizerFilter === "all" || event.organizer.id === organizerFilter;
+    return matchesSearch && matchesType && matchesStatus && matchesOrganizer;
   });
 
   return (
     <>
       <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
         <div className="flex flex-col items-center space-y-4">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center">
-            Etkinlik Yönetimi
-          </h2>
+          <div className="flex w-full max-w-3xl items-center justify-between">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Etkinlik Yönetimi
+            </h2>
+            <Button className="bg-primary hover:bg-primary/90">
+              <Plus className="mr-2 h-4 w-4" />
+              Etkinlik Ekle
+            </Button>
+          </div>
 
-          <div className="flex flex-col w-full max-w-3xl gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-              <Input
-                placeholder="Etkinlik ara..."
-                className="w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Select
-                  value={typeFilter}
-                  onValueChange={(value: "all" | "user" | "admin") =>
-                    setTypeFilter(value)
-                  }
-                >
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Organizatör" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tümü</SelectItem>
-                    <SelectItem value="user">Kullanıcı Etkinlikleri</SelectItem>
-                    <SelectItem value="admin">Yönetici Etkinlikleri</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={statusFilter}
-                  onValueChange={(value: "all" | "upcoming" | "past") =>
-                    setStatusFilter(value)
-                  }
-                >
-                  <SelectTrigger className="w-full sm:w-[140px]">
-                    <SelectValue placeholder="Durum" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tümü</SelectItem>
-                    <SelectItem value="upcoming">Yaklaşan</SelectItem>
-                    <SelectItem value="past">Geçmiş</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={sportFilter}
-                  onValueChange={(value: SportType | "all") =>
-                    setSportFilter(value)
-                  }
-                >
-                  <SelectTrigger className="w-full sm:w-[140px]">
-                    <SelectValue placeholder="Spor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tümü</SelectItem>
-                    {Object.keys(sportIcons).map((sport) => (
-                      <SelectItem key={sport} value={sport as SportType}>
-                        {sport}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          <div className="w-full max-w-3xl space-y-4">
+            <Input
+              placeholder="Etkinlik ara..."
+              className="w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isLoading}
+            />
+            <div className="flex gap-2">
+              <Select
+                value={typeFilter}
+                onValueChange={(value: "all" | SportType) =>
+                  setTypeFilter(value)
+                }
+              >
+                <SelectTrigger className="w-[200px] gap-2 cursor-pointer">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Tür: </span>
+                  <span className="font-medium">
+                    {typeFilter === "all" ? "Tümü" : typeFilter}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tümü</SelectItem>
+                  <SelectItem value="Futbol">Futbol</SelectItem>
+                  <SelectItem value="Basketbol">Basketbol</SelectItem>
+                  <SelectItem value="Voleybol">Voleybol</SelectItem>
+                  <SelectItem value="Tenis">Tenis</SelectItem>
+                  <SelectItem value="Yüzme">Yüzme</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <div className="flex justify-end">
-              <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90">
-                <Plus className="mr-2 h-4 w-4" />
-                Etkinlik Ekle
-              </Button>
+              <Select
+                value={statusFilter}
+                onValueChange={(
+                  value: "all" | "upcoming" | "ongoing" | "past"
+                ) => setStatusFilter(value)}
+              >
+                <SelectTrigger className="w-[200px] gap-2 cursor-pointer">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Durum: </span>
+                  <span className="font-medium">
+                    {statusFilter === "all"
+                      ? "Tümü"
+                      : statusFilter === "upcoming"
+                      ? "Yaklaşan"
+                      : statusFilter === "ongoing"
+                      ? "Devam Eden"
+                      : "Geçmiş"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tümü</SelectItem>
+                  <SelectItem value="upcoming">Yaklaşan</SelectItem>
+                  <SelectItem value="ongoing">Devam Eden</SelectItem>
+                  <SelectItem value="past">Geçmiş</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={organizerFilter}
+                onValueChange={setOrganizerFilter}
+              >
+                <SelectTrigger className="w-[200px] gap-2 cursor-pointer">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Organizatör: </span>
+                  <span className="font-medium">
+                    {organizerFilter === "all" ? "Tümü" : "Seçili"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tümü</SelectItem>
+                  {dummyUsers.map((user) => (
+                    <SelectItem
+                      key={user.id}
+                      value={user.id}
+                      className="cursor-pointer"
+                    >
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
 
         <div className="mx-auto max-w-3xl space-y-4">
-          {filteredEvents.length === 0 ? (
+          {isLoading ? (
+            // Show multiple skeleton cards while loading
+            <>
+              <EventCardSkeleton />
+              <EventCardSkeleton />
+              <EventCardSkeleton />
+            </>
+          ) : filteredEvents.length === 0 ? (
             <Card>
               <CardContent className="p-6">
                 <div className="text-center text-sm text-muted-foreground">
@@ -422,14 +465,13 @@ export default function EventsPage() {
                               e.stopPropagation();
                               handleOrganizerClick(event.organizer.id);
                             }}
-                            className="group flex items-center gap-2 hover:bg-accent/50 rounded-full px-3 py-1.5 transition-colors relative"
+                            className="group flex items-center gap-2 hover:bg-accent/50 rounded-lg px-3 py-1.5 transition-colors relative border border-transparent hover:border-primary/20 cursor-pointer"
                           >
                             <UserCircle2 className="h-5 w-5 text-primary" />
-                            <span className="font-medium group-hover:text-primary transition-colors">
+                            <span className="font-medium text-primary group-hover:text-primary/80 transition-colors">
                               {event.organizer.name}
                             </span>
-                            <span className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 rounded-full transition-opacity" />
-                            <span className="absolute left-full ml-2 px-2 py-1 text-xs text-muted-foreground bg-popover border rounded opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity">
+                            <span className="absolute left-full ml-2 px-2.5 py-1 text-xs bg-popover border rounded-md shadow-sm opacity-0 group-hover:opacity-100 whitespace-nowrap transition-all translate-x-2 group-hover:translate-x-0">
                               Profili görüntüle
                             </span>
                           </button>
@@ -462,7 +504,7 @@ export default function EventsPage() {
 
                       {/* Stats Section */}
                       <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg h-fit">
-                        <div>
+                        <div className="cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors">
                           <div className="text-2xl font-bold text-primary">
                             {event.currentParticipants}/{event.maxParticipants}
                           </div>
@@ -470,7 +512,7 @@ export default function EventsPage() {
                             Katılımcı
                           </div>
                         </div>
-                        <div>
+                        <div className="cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors">
                           <div className="text-2xl font-bold text-primary">
                             {event.pendingRequests}
                           </div>
